@@ -101,7 +101,7 @@
 
 <nav>
   <a class="nav-brand" href="{% url 'home' %}">Travel<span>oop</span></a>
-  {% if request.session.user %}
+  {% if request.user.is_authenticated %}
   <ul class="nav-links">
     <li><a href="{% url 'dashboard' %}"  {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
     <li><a href="{% url 'trip_list' %}"  {% if request.resolver_match.url_name == 'trip_list'  %}class="active"{% endif %}>Trips</a></li>
@@ -111,7 +111,8 @@
   </ul>
   {% else %}
   <ul class="nav-links">
-    <li><a href="{% url 'google_login' %}">Sign In</a></li>
+    <li><a href="{% url 'login' %}">Sign In</a></li>
+    <li><a href="{% url 'register' %}">Register</a></li>
   </ul>
   {% endif %}
 </nav>

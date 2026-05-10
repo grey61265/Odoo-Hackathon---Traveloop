@@ -1,0 +1,145 @@
+{% extends "trips/base.html" %}
+{% block title %}Activity Search — Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--text); }
+  .page-header p { color: var(--muted); margin-top: 0.35rem; }
+
+  .filter-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1rem 1.25rem; margin-bottom: 2rem;
+    display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;
+  }
+  .fg { flex: 1; min-width: 130px; }
+  .fg label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-control {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 0.55rem 0.8rem; font-size: 0.88rem;
+    font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+  }
+  .form-control:focus { border-color: var(--accent); }
+  .btn {
+    display: inline-block; padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.85rem;
+    font-weight: 600; border: none; cursor: pointer; transition: opacity 0.2s, transform 0.15s; white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #0f1117; }
+  .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); text-decoration: none; }
+  .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+
+  .results-meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+
+  .act-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .act-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .act-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .act-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+  .act-name { font-weight: 600; font-size: 1rem; }
+  .act-city { color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
+  .act-cost { color: var(--accent); font-weight: 700; font-size: 1.1rem; white-space: nowrap; }
+  .act-free { color: #34c759; font-weight: 700; font-size: 1.1rem; }
+  .act-desc { color: var(--muted); font-size: 0.84rem; line-height: 1.5; }
+  .act-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .pill {
+    border-radius: 20px; padding: 0.18rem 0.6rem; font-size: 0.75rem; font-weight: 500;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--muted);
+  }
+  .pill-cat { color: var(--accent); border-color: rgba(245,166,35,0.3); background: rgba(245,166,35,0.08); }
+  .pill-dur { color: #5ac8fa; border-color: rgba(90,200,250,0.3); background: rgba(90,200,250,0.07); }
+
+  .add-form { margin-top: auto; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .add-form select { flex: 1; min-width: 120px; }
+
+  .empty { padding: 3rem; text-align: center; color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🎯 Activity Search</h1>
+  <p>Browse curated experiences and add them to your trip stops.</p>
+</div>
+
+<form method="get" class="filter-bar">
+  <div class="fg">
+    <label>Search</label>
+    <input name="q" value="{{ query }}" class="form-control" placeholder="Activity, city…">
+  </div>
+  <div class="fg" style="max-width:170px;">
+    <label>Category</label>
+    <select name="category" class="form-control">
+      <option value="">All Categories</option>
+      {% for val, label in categories %}
+      <option value="{{ val }}" {% if val == category %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="fg" style="max-width:140px;">
+    <label>Max Cost (₹)</label>
+    <input name="max_cost" value="{{ max_cost }}" class="form-control" type="number" min="0" placeholder="Any">
+  </div>
+  <div class="fg" style="max-width:160px;">
+    <label>Sort By</label>
+    <select name="sort" class="form-control">
+      <option value="popular"  {% if sort_by == 'popular'  %}selected{% endif %}>Default</option>
+      <option value="cost_asc" {% if sort_by == 'cost_asc' %}selected{% endif %}>Cost: Low → High</option>
+      <option value="cost_desc"{% if sort_by == 'cost_desc'%}selected{% endif %}>Cost: High → Low</option>
+      <option value="duration" {% if sort_by == 'duration' %}selected{% endif %}>Longest First</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Search</button>
+  <a href="{% url 'activity_search' %}" class="btn btn-ghost">Reset</a>
+</form>
+
+<div class="results-meta">{{ activities|length }} activit{{ activities|length|pluralize:"y,ies" }} found</div>
+
+{% if activities %}
+<div class="act-grid">
+  {% for act in activities %}
+  <div class="act-card">
+    <div class="act-top">
+      <div>
+        <div class="act-name">{{ act.name }}</div>
+        <div class="act-city">📍 {{ act.city }}</div>
+      </div>
+      {% if act.cost == 0 %}
+      <span class="act-free">FREE</span>
+      {% else %}
+      <span class="act-cost">₹{{ act.cost }}</span>
+      {% endif %}
+    </div>
+    <div class="act-desc">{{ act.description }}</div>
+    <div class="act-pills">
+      <span class="pill pill-cat">{{ act.category }}</span>
+      <span class="pill pill-dur">⏱ {{ act.duration_hrs }}h</span>
+    </div>
+
+    {% if all_stops %}
+    <form method="post" class="add-form">
+      {% csrf_token %}
+      <input type="hidden" name="act_name" value="{{ act.name }}">
+      <input type="hidden" name="act_cat"  value="{{ act.category }}">
+      <input type="hidden" name="act_cost" value="{{ act.cost }}">
+      <input type="hidden" name="act_desc" value="{{ act.description }}">
+      <select name="stop_id" class="form-control">
+        {% for stop in all_stops %}
+        <option value="{{ stop.pk }}">{{ stop.trip.title }} → {{ stop.city }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">+ Add</button>
+    </form>
+    {% else %}
+    <a href="{% url 'create_trip' %}" class="btn btn-ghost btn-sm" style="text-align:center;">Add a stop first</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">No activities match your search. Try a different term or reset the filters.</div>
+{% endif %}
+{% endblock %}

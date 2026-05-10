@@ -1,13 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import logout
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.contrib import messages
-
-import requests
-
-from django.conf import settings
 
 from .models import (
     Trip,
@@ -33,15 +29,10 @@ from .forms import (
 # =========================================================
 
 def _get_current_user(request):
-    """Return the Django User for the logged-in session, or None."""
-    email = (request.session.get('user') or {}).get('email')
-    if not email:
-        return None
-    user, _ = User.objects.get_or_create(
-        username=email,
-        defaults={'email': email}
-    )
-    return user
+    """Return the logged-in Django User, or None."""
+    if request.user.is_authenticated:
+        return request.user
+    return None
 
 
 # =========================================================
@@ -49,7 +40,7 @@ def _get_current_user(request):
 # =========================================================
 
 def home(request):
-    if 'user' in request.session:
+    if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'trips/home.html')
 
@@ -59,7 +50,7 @@ def home(request):
 # =========================================================
 
 def dashboard(request):
-    if 'user' not in request.session:
+    if not request.user.is_authenticated:
         return redirect('home')
 
     current_user = _get_current_user(request)
@@ -78,7 +69,7 @@ def dashboard(request):
         'total_budget':      total_spent,
         'countries_visited': all_cities,
         'recent_trips':      recent_trips,
-        'user_data':         request.session.get('user'),
+        'user_data': {'name': request.user.get_full_name() or request.user.username, 'email': request.user.email, 'picture': None},
     }
 
     return render(request, 'trips/dashboard.html', context)
@@ -89,7 +80,7 @@ def dashboard(request):
 # =========================================================
 
 def trip_list(request):
-    if 'user' not in request.session:
+    if not request.user.is_authenticated:
         return redirect('home')
 
     current_user = _get_current_user(request)
@@ -102,7 +93,7 @@ def trip_list(request):
 # =========================================================
 
 def create_trip(request):
-    if 'user' not in request.session:
+    if not request.user.is_authenticated:
         return redirect('home')
 
     if request.method == 'POST':
@@ -125,7 +116,7 @@ def create_trip(request):
 # =========================================================
 
 def trip_detail(request, pk):
-    if 'user' not in request.session:
+    if not request.user.is_authenticated:
         return redirect('home')
 
     current_user = _get_current_user(request)
@@ -275,7 +266,7 @@ def trip_detail(request, pk):
 # =========================================================
 
 def delete_trip(request, pk):
-    if 'user' not in request.session:
+    if not request.user.is_authenticated:
         return redirect('home')
 
     current_user = _get_current_user(request)
@@ -294,26 +285,41 @@ def delete_trip(request, pk):
 # =========================================================
 
 def budget(request):
-    if 'user' not in request.session:
+    if not request.user.is_authenticated:
         return redirect('home')
 
     current_user = _get_current_user(request)
-    expenses     = Expense.objects.filter(trip__user=current_user)
-    total_budget = sum(expense.amount for expense in expenses)
+    trips        = Trip.objects.filter(user=current_user)
 
-    # Category breakdown for chart
-    from collections import defaultdict
-    breakdown = defaultdict(float)
-    for exp in expenses:
-        breakdown[exp.get_category_display()] += float(exp.amount)
+    data = []
+    grand_total = 0
+
+    for trip in trips:
+        trip_expenses  = Expense.objects.filter(trip=trip)
+        expense_total  = sum(e.amount for e in trip_expenses)
+        activity_total = sum(
+            a.cost
+            for stop in Stop.objects.filter(trip=trip)
+            for a in Activity.objects.filter(stop=stop)
+        )
+        trip_total   = expense_total + activity_total
+        grand_total += trip_total
+        data.append({
+            "trip":       trip,
+            "expenses":   expense_total,
+            "activities": activity_total,
+            "total":      trip_total,
+        })
+
+    # Only show trips with spending
+    data = [d for d in data if d["total"] > 0]
 
     context = {
-        'expenses':     expenses,
-        'total_budget': total_budget,
-        'breakdown':    dict(breakdown),
+        "data":        data,
+        "grand_total": grand_total,
     }
 
-    return render(request, 'trips/budget.html', context)
+    return render(request, "trips/budget.html", context)
 
 
 # =========================================================
@@ -321,13 +327,13 @@ def budget(request):
 # =========================================================
 
 def profile(request):
-    if 'user' not in request.session:
+    if not request.user.is_authenticated:
         return redirect('home')
 
     return render(
         request,
         'trips/profile.html',
-        {'user_data': request.session.get('user')}
+        {'user_data': {'name': request.user.get_full_name() or request.user.username, 'email': request.user.email, 'picture': None}}
     )
 
 
@@ -358,107 +364,54 @@ def shared_trip(request, pk):
 
 
 # =========================================================
-# GOOGLE LOGIN
+# LOGIN
 # =========================================================
 
-def google_login(request):
-    client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
-    redirect_uri = getattr(settings, 'GOOGLE_REDIRECT_URI', '')
-
-    # ── Dev bypass: if credentials are placeholder, use email/password mock ──
-    if not client_id or client_id.strip() in ('', '.apps.googleusercontent.com'):
-        return render(request, 'trips/dev_login.html')
-
-    google_auth_url = (
-        "https://accounts.google.com/o/oauth2/auth"
-        "?response_type=code"
-        f"&client_id={client_id}"
-        f"&redirect_uri={redirect_uri}"
-        "&scope=openid%20email%20profile"
-        "&access_type=offline"
-        "&prompt=select_account"
-    )
-
-    return redirect(google_auth_url)
-
-
-# =========================================================
-# DEV LOGIN (used when Google credentials are not configured)
-# =========================================================
-
-def dev_login(request):
-    """Simple name/email form that bypasses OAuth for local development."""
-    if request.method == 'POST':
-        name  = request.POST.get('name', 'Dev User').strip()
-        email = request.POST.get('email', 'dev@traveloop.local').strip()
-
-        if not email:
-            messages.error(request, "Email is required.")
-            return render(request, 'trips/dev_login.html')
-
-        request.session['user'] = {
-            'name':    name or email.split('@')[0],
-            'email':   email,
-            'picture': None,
-        }
+def login_view(request):
+    if request.user.is_authenticated:
         return redirect('dashboard')
 
-    return render(request, 'trips/dev_login.html')
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Invalid username or password.")
+
+    return render(request, 'trips/login.html')
 
 
 # =========================================================
-# GOOGLE CALLBACK
+# REGISTER
 # =========================================================
 
-def google_callback(request):
-    code = request.GET.get('code')
+def register_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
 
-    if not code:
-        messages.error(request, "No authorisation code returned from Google.")
-        return redirect('home')
+    if request.method == 'POST':
+        username  = request.POST.get('username', '').strip()
+        email     = request.POST.get('email', '').strip()
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
 
-    token_url = "https://oauth2.googleapis.com/token"
+        if not username or not password1:
+            messages.error(request, "Username and password are required.")
+        elif password1 != password2:
+            messages.error(request, "Passwords do not match.")
+        elif User.objects.filter(username=username).exists():
+            messages.error(request, "That username is already taken.")
+        else:
+            user = User.objects.create_user(username=username, email=email, password=password1)
+            login(request, user)
+            messages.success(request, f"Welcome, {username}!")
+            return redirect('dashboard')
 
-    data = {
-        'code':          code,
-        'client_id':     settings.GOOGLE_CLIENT_ID,
-        'client_secret': settings.GOOGLE_CLIENT_SECRET,
-        'redirect_uri':  settings.GOOGLE_REDIRECT_URI,
-        'grant_type':    'authorization_code',
-    }
-
-    try:
-        response   = requests.post(token_url, data=data, timeout=10)
-        token_json = response.json()
-    except Exception as exc:
-        messages.error(request, f"Failed to contact Google: {exc}")
-        return redirect('home')
-
-    if 'id_token' not in token_json:
-        error_desc = token_json.get('error_description', token_json.get('error', 'Unknown error'))
-        messages.error(request, f"Google auth failed: {error_desc}")
-        return redirect('home')
-
-    try:
-        from google.oauth2 import id_token
-        from google.auth.transport import requests as google_requests
-
-        idinfo = id_token.verify_oauth2_token(
-            token_json['id_token'],
-            google_requests.Request(),
-            settings.GOOGLE_CLIENT_ID,
-        )
-    except Exception as exc:
-        messages.error(request, f"Token verification failed: {exc}")
-        return redirect('home')
-
-    request.session['user'] = {
-        'name':    idinfo.get('name'),
-        'email':   idinfo.get('email'),
-        'picture': idinfo.get('picture'),
-    }
-
-    return redirect('dashboard')
+    return render(request, 'trips/register.html')
 
 
 # =========================================================
@@ -466,6 +419,5 @@ def google_callback(request):
 # =========================================================
 
 def logout_view(request):
-    request.session.flush()
     logout(request)
     return redirect('home')

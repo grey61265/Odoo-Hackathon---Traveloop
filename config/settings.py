@@ -70,12 +70,5 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# =========================================================
-# GOOGLE AUTH
-# =========================================================
-
-GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID'
-
-GOOGLE_CLIENT_SECRET = 'YOUR_CLIENT_SECRET'
-
-GOOGLE_REDIRECT_URI = 'REDIRECT_URL'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'

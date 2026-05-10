@@ -1,0 +1,186 @@
+{% extends "trips/base.html" %}
+{% block title %}Analytics — Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--text); }
+  .page-header p { color: var(--muted); margin-top: 0.35rem; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.4rem; position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(245,166,35,0.06) 0%, transparent 60%);
+  }
+  .stat-icon { font-size: 1.4rem; margin-bottom: 0.6rem; display: block; }
+  .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .stat-value { font-size: 2rem; font-weight: 700; color: var(--text); margin-top: 0.2rem; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .panel-head { padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.95rem; background: rgba(245,166,35,0.05); }
+  .panel-body { padding: 0; }
+
+  .bar-row { display: grid; grid-template-columns: 110px 1fr 60px; align-items: center; gap: 0.6rem; padding: 0.6rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
+  .bar-row:last-child { border-bottom: none; }
+  .bar-row .lbl { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { background: rgba(255,255,255,0.06); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 4px; background: var(--accent); }
+  .bar-row .amt { font-weight: 600; text-align: right; color: var(--text); }
+
+  .trips-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .trips-table th { text-align: left; padding: 0.75rem 1.25rem; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); background: rgba(245,166,35,0.04); }
+  .trips-table td { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .trips-table tr:last-child td { border-bottom: none; }
+  .trips-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge { display: inline-block; padding: 0.18rem 0.6rem; border-radius: 20px; font-size: 0.75rem; background: rgba(245,166,35,0.13); color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>📊 Analytics Dashboard</h1>
+  <p>Platform-wide stats and user engagement overview.</p>
+</div>
+
+<!-- KPI cards -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-icon">✈️</span>
+    <div class="stat-label">Total Trips</div>
+    <div class="stat-value">{{ total_trips }}</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">👥</span>
+    <div class="stat-label">Users</div>
+    <div class="stat-value">{{ total_users }}</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">💰</span>
+    <div class="stat-label">Total Expenses Logged</div>
+    <div class="stat-value">₹{{ total_revenue|floatformat:0 }}</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">🎯</span>
+    <div class="stat-label">Activities Added</div>
+    <div class="stat-value">{{ total_activities }}</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <!-- Top Cities -->
+  <div class="panel">
+    <div class="panel-head">📍 Top Cities</div>
+    <div class="panel-body">
+      {% if top_cities %}
+        {% with max_count=top_cities.0.1 %}
+        {% for city, count in top_cities %}
+        <div class="bar-row">
+          <span class="lbl">{{ city }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:{% widthratio count max_count 100 %}%;"></div></div>
+          <span class="amt">{{ count }}</span>
+        </div>
+        {% endfor %}
+        {% endwith %}
+      {% else %}
+        <div style="padding:2rem;text-align:center;color:var(--muted);">No stops yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Spend by Category -->
+  <div class="panel">
+    <div class="panel-head">💸 Spend by Category</div>
+    <div class="panel-body">
+      {% if cat_spend %}
+        {% for cat, amt in cat_spend.items %}
+        <div class="bar-row">
+          <span class="lbl">{{ cat }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:60%;"></div></div>
+          <span class="amt">₹{{ amt|floatformat:0 }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:2rem;text-align:center;color:var(--muted);">No expenses yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="two-col">
+  <!-- Trips per User -->
+  <div class="panel">
+    <div class="panel-head">👤 Trips per User</div>
+    <div class="panel-body">
+      {% if user_trip_counts %}
+        {% with max_t=user_trip_counts.0.trips %}
+        {% for row in user_trip_counts %}
+        <div class="bar-row">
+          <span class="lbl" title="{{ row.email }}">{{ row.email|truncatechars:14 }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:{% widthratio row.trips max_t 100 %}%;"></div></div>
+          <span class="amt">{{ row.trips }}</span>
+        </div>
+        {% endfor %}
+        {% endwith %}
+      {% else %}
+        <div style="padding:2rem;text-align:center;color:var(--muted);">No data yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Activity Categories -->
+  <div class="panel">
+    <div class="panel-head">🎯 Activity Categories</div>
+    <div class="panel-body">
+      {% if act_cat_counts %}
+        {% for cat, cnt in act_cat_counts.items %}
+        <div class="bar-row">
+          <span class="lbl">{{ cat }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:60%;"></div></div>
+          <span class="amt">{{ cnt }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:2rem;text-align:center;color:var(--muted);">No activities yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Recent Trips table -->
+<div class="panel" style="margin-bottom:2rem;">
+  <div class="panel-head">🗂️ Recent Trips (All Users)</div>
+  <div class="panel-body">
+    {% if all_trips %}
+    <table class="trips-table">
+      <thead>
+        <tr>
+          <th>Trip</th>
+          <th>User</th>
+          <th>Dates</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trip in all_trips %}
+        <tr>
+          <td><strong>{{ trip.title }}</strong></td>
+          <td style="color:var(--muted);">{{ trip.user.email|default:trip.user.username }}</td>
+          <td style="color:var(--muted);font-size:0.82rem;">{{ trip.start_date }} → {{ trip.end_date }}</td>
+          <td><a href="{% url 'trip_detail' trip.pk %}" class="badge" style="text-decoration:none;">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding:2rem;text-align:center;color:var(--muted);">No trips yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

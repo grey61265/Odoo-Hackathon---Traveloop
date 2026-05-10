@@ -1,0 +1,139 @@
+{% extends "trips/base.html" %}
+{% block title %}City Search — Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--text); }
+  .page-header p { color: var(--muted); margin-top: 0.35rem; }
+
+  .filter-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1rem 1.25rem; margin-bottom: 2rem;
+    display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;
+  }
+  .fg { flex: 1; min-width: 140px; }
+  .fg label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-control {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 0.55rem 0.8rem; font-size: 0.88rem;
+    font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+  }
+  .form-control:focus { border-color: var(--accent); }
+  .btn {
+    display: inline-block; padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.85rem;
+    font-weight: 600; border: none; cursor: pointer; transition: opacity 0.2s, transform 0.15s; white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #0f1117; }
+  .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); text-decoration: none; }
+
+  .results-meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+
+  .city-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .city-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .city-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .city-card-top { display: flex; align-items: center; gap: 0.75rem; }
+  .city-emoji { font-size: 2rem; }
+  .city-name { font-weight: 600; font-size: 1.05rem; }
+  .city-country { color: var(--muted); font-size: 0.82rem; }
+  .city-desc { color: var(--muted); font-size: 0.84rem; line-height: 1.5; }
+  .city-meta { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .meta-pill {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 20px; padding: 0.2rem 0.65rem; font-size: 0.76rem; color: var(--muted);
+    display: flex; align-items: center; gap: 0.3rem;
+  }
+  .meta-pill.cost { color: #34c759; border-color: rgba(52,199,89,0.25); background: rgba(52,199,89,0.07); }
+  .meta-pill.pop  { color: var(--accent); border-color: rgba(245,166,35,0.25); background: rgba(245,166,35,0.07); }
+
+  .add-form { margin-top: auto; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .add-form select { flex: 1; min-width: 120px; }
+  .add-form button { white-space: nowrap; }
+
+  .pop-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .pop-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+
+  .empty { padding: 3rem; text-align: center; color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🔍 City Search</h1>
+  <p>Discover destinations and add them directly to your trips.</p>
+</div>
+
+<form method="get" class="filter-bar">
+  <div class="fg">
+    <label>Search</label>
+    <input name="q" value="{{ query }}" class="form-control" placeholder="City or country…">
+  </div>
+  <div class="fg" style="max-width:180px;">
+    <label>Region</label>
+    <select name="region" class="form-control">
+      <option value="">All Regions</option>
+      {% for r in regions %}
+      <option value="{{ r }}" {% if r == region %}selected{% endif %}>{{ r }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="fg" style="max-width:160px;">
+    <label>Sort By</label>
+    <select name="sort" class="form-control">
+      <option value="popularity" {% if sort_by == 'popularity' %}selected{% endif %}>Most Popular</option>
+      <option value="cost_asc"   {% if sort_by == 'cost_asc'   %}selected{% endif %}>Cost: Low → High</option>
+      <option value="cost_desc"  {% if sort_by == 'cost_desc'  %}selected{% endif %}>Cost: High → Low</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Search</button>
+  <a href="{% url 'city_search' %}" class="btn btn-ghost">Reset</a>
+</form>
+
+<div class="results-meta">{{ cities|length }} destination{{ cities|length|pluralize }} found</div>
+
+{% if cities %}
+<div class="city-grid">
+  {% for city in cities %}
+  <div class="city-card">
+    <div class="city-card-top">
+      <span class="city-emoji">{{ city.emoji }}</span>
+      <div>
+        <div class="city-name">{{ city.name }}</div>
+        <div class="city-country">{{ city.country }} · {{ city.region }}</div>
+      </div>
+    </div>
+    <div class="city-desc">{{ city.description }}</div>
+    <div class="city-meta">
+      <span class="meta-pill cost">~${{ city.cost_index }}/day</span>
+      <span class="meta-pill pop">
+        ⭐ {{ city.popularity }}%
+      </span>
+    </div>
+    <div class="pop-bar"><div class="pop-fill" style="width:{{ city.popularity }}%;"></div></div>
+
+    {% if trips %}
+    <form method="post" class="add-form">
+      {% csrf_token %}
+      <input type="hidden" name="city_name" value="{{ city.name }}">
+      <select name="trip_id" class="form-control">
+        {% for trip in trips %}
+        <option value="{{ trip.pk }}">{{ trip.title }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm" style="padding:0.4rem 0.9rem;font-size:0.8rem;">+ Add to Trip</button>
+    </form>
+    {% else %}
+    <a href="{% url 'create_trip' %}" class="btn btn-ghost" style="font-size:0.8rem;padding:0.4rem 0.9rem;text-align:center;">Create a trip first</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">No cities match your search. Try a different term or reset the filters.</div>
+{% endif %}
+{% endblock %}

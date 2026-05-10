@@ -4,9 +4,8 @@ from . import views
 urlpatterns = [
     # ── Auth ──────────────────────────────────────────────
     path('',                    views.home,           name='home'),
-    path('auth/google/',        views.google_login,   name='google_login'),
-    path('auth/google/callback/', views.google_callback, name='google_callback'),
-    path('auth/dev-login/',     views.dev_login,      name='dev_login'),
+    path('login/',              views.login_view,     name='login'),
+    path('register/',           views.register_view,  name='register'),
     path('logout/',             views.logout_view,    name='logout'),
 
     # ── Core pages ────────────────────────────────────────
