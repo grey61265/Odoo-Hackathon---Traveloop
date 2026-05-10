@@ -1,0 +1,53 @@
+{% extends "trips/base.html" %}
+{% block title %}Delete Trip — Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+  .confirm-card {
+    max-width: 520px;
+    margin: 3rem auto;
+    background: var(--surface);
+    border: 1px solid rgba(255,59,48,0.3);
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+  }
+  .confirm-card .icon { font-size: 3rem; margin-bottom: 1rem; }
+  .confirm-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .confirm-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .actions { display: flex; gap: 1rem; justify-content: center; }
+  .btn {
+    padding: 0.65rem 1.4rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: opacity 0.2s;
+  }
+  .btn-danger { background: #ff3b30; color: #fff; }
+  .btn-ghost  { background: transparent; border: 1px solid var(--border); color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-card">
+  <div class="icon">🗑️</div>
+  <h2>Delete "{{ trip.title }}"?</h2>
+  <p>This will permanently delete the trip and all its stops, activities, expenses, packing items and notes. This cannot be undone.</p>
+  <div class="actions">
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    </form>
+    <a href="{% url 'trip_detail' trip.pk %}" class="btn btn-ghost">Cancel</a>
+  </div>
+</div>
+{% endblock %}

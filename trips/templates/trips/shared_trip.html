@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ trip.title }} — Traveloop</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --accent: #f5a623; --accent2: #e05c3a; --text: #e8e4dc; --muted: #7a7a8c;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+    /* Nav strip */
+    nav {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--accent); text-decoration: none; }
+    .brand span { color: var(--accent2); }
+    .public-badge {
+      font-size: 0.75rem; padding: 0.25rem 0.7rem; border-radius: 20px;
+      background: rgba(52,199,89,0.12); color: #34c759; border: 1px solid rgba(52,199,89,0.25);
+    }
+
+    main { max-width: 860px; margin: 0 auto; padding: 2.5rem 2rem; }
+
+    /* Hero */
+    .trip-hero { margin-bottom: 2.5rem; }
+    .trip-hero h1 { font-family: 'DM Serif Display', serif; font-size: 2.2rem; margin-bottom: 0.5rem; }
+    .trip-meta { color: var(--muted); font-size: 0.9rem; }
+    .trip-desc { margin-top: 0.75rem; color: var(--muted); line-height: 1.6; }
+
+    /* Actions */
+    .action-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.6rem 1.3rem; border-radius: 10px; font-size: 0.88rem;
+      font-weight: 600; text-decoration: none; border: none; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-primary { background: var(--accent); color: #0f1117; }
+    .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+    /* Stats strip */
+    .stats-strip {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.25rem; text-align: center;
+    }
+    .stat-val { font-size: 1.6rem; font-weight: 600; color: var(--accent); }
+    .stat-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* Section */
+    .section-title { font-family: 'DM Serif Display', serif; font-size: 1.2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Timeline / stops */
+    .timeline { position: relative; padding-left: 1.5rem; margin-bottom: 2rem; }
+    .timeline::before { content: ''; position: absolute; left: 0.45rem; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .stop-block { position: relative; margin-bottom: 1.5rem; }
+    .stop-block::before {
+      content: ''; position: absolute; left: -1.27rem; top: 0.6rem;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+    }
+    .stop-head {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px 12px 0 0; padding: 0.85rem 1.25rem;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .stop-city { font-weight: 600; font-size: 1rem; }
+    .stop-dates { font-size: 0.82rem; color: var(--muted); }
+    .activities-list { background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; }
+    .act-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.65rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; gap: 1rem;
+    }
+    .act-row:last-child { border-bottom: none; }
+    .act-name { font-weight: 500; }
+    .act-cat  { font-size: 0.78rem; color: var(--muted); }
+    .act-cost { color: var(--accent); font-weight: 600; white-space: nowrap; }
+    .no-act   { padding: 0.75rem 1.25rem; color: var(--muted); font-size: 0.85rem; }
+
+    /* Notes */
+    .note { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+    .note-title { font-weight: 600; margin-bottom: 0.3rem; }
+    .note-content { font-size: 0.88rem; color: var(--muted); white-space: pre-wrap; }
+
+    /* Share panel */
+    .share-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .url-row { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
+    .url-box {
+      flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.55rem 0.9rem; font-size: 0.85rem; color: var(--muted);
+      font-family: monospace; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="/">Travel<span>oop</span></a>
+  <span class="public-badge">🌐 Public Itinerary</span>
+</nav>
+
+<main>
+
+  <!-- Hero -->
+  <div class="trip-hero">
+    <h1>🗺️ {{ trip.title }}</h1>
+    <div class="trip-meta">📅 {{ trip.start_date }} → {{ trip.end_date }} &nbsp;·&nbsp; {{ stops.count }} stop{{ stops.count|pluralize }}</div>
+    {% if trip.description %}<p class="trip-desc">{{ trip.description }}</p>{% endif %}
+  </div>
+
+  <!-- Actions -->
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="copyUrl()">🔗 Copy Link</button>
+    <a href="https://twitter.com/intent/tweet?text=Check+out+my+trip+{{ trip.title|urlencode }}&url={{ request.build_absolute_uri }}" target="_blank" class="btn btn-ghost">𝕏 Share</a>
+    <a href="{% url 'home' %}" class="btn btn-ghost">Plan your own ✈️</a>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-strip">
+    <div class="stat">
+      <div class="stat-val">{{ stops.count }}</div>
+      <div class="stat-lbl">Stops</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">₹{{ total_activity_cost }}</div>
+      <div class="stat-lbl">Activity Cost</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">{{ trip.end_date|timeuntil:trip.start_date }}</div>
+      <div class="stat-lbl">Duration</div>
+    </div>
+  </div>
+
+  <!-- Timeline / itinerary -->
+  <div class="section-title"><span>📍</span> Itinerary</div>
+  <div class="timeline">
+    {% for stop in stops %}
+    <div class="stop-block">
+      <div class="stop-head">
+        <div class="stop-city">🏙️ {{ stop.city }}</div>
+        <div class="stop-dates">{{ stop.arrival_date }} → {{ stop.departure_date }}</div>
+      </div>
+      <div class="activities-list">
+        {% for activity in stop.activities.all %}
+        <div class="act-row">
+          <div>
+            <div class="act-name">{{ activity.name }}</div>
+            <div class="act-cat">{{ activity.get_category_display }}</div>
+          </div>
+          <div class="act-cost">₹{{ activity.cost }}</div>
+        </div>
+        {% empty %}
+        <div class="no-act">No activities listed for this stop.</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% empty %}
+    <p style="color:var(--muted);">No stops added to this itinerary yet.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Notes -->
+  {% if notes %}
+  <div class="section-title"><span>📝</span> Trip Notes</div>
+  {% for note in notes %}
+  <div class="note">
+    <div class="note-title">{{ note.title }}</div>
+    <div class="note-content">{{ note.content }}</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Share panel -->
+  <div class="share-panel">
+    <div class="section-title" style="margin-bottom:0.5rem;font-size:1rem;">🔗 Share this itinerary</div>
+    <p style="font-size:0.85rem;color:var(--muted);">Anyone with this link can view the trip in read-only mode.</p>
+    <div class="url-row">
+      <div class="url-box" id="shareUrl">{{ request.build_absolute_uri }}</div>
+      <button class="btn btn-ghost" onclick="copyUrl()" style="white-space:nowrap;">Copy</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+function copyUrl() {
+  const url = document.getElementById('shareUrl').textContent.trim();
+  navigator.clipboard.writeText(url).then(() => {
+    alert('Link copied to clipboard!');
+  });
+}
+</script>
+
+</body>
+</html>

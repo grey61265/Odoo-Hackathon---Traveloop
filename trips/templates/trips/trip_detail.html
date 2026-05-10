@@ -1,0 +1,452 @@
+{% extends "trips/base.html" %}
+{% block title %}{{ trip.title }} — Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Header ── */
+  .trip-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .trip-header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--text);
+  }
+  .trip-meta { color: var(--muted); font-size: 0.9rem; margin-top: 0.3rem; }
+
+  /* ── Budget summary strip ── */
+  .budget-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  .bstat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem 1.4rem;
+  }
+  .bstat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .bstat-value { font-size: 1.6rem; font-weight: 600; color: var(--accent); margin-top: 0.25rem; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 2.5rem; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .card-body { padding: 1.25rem; }
+
+  /* ── Stop card ── */
+  .stop-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .stop-head {
+    background: rgba(245,166,35,0.07);
+    border-bottom: 1px solid var(--border);
+    padding: 0.9rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .stop-title { font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .stop-dates { color: var(--muted); font-size: 0.82rem; }
+
+  /* ── Activity rows ── */
+  .activity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .activity-row:last-of-type { border-bottom: none; }
+  .act-name  { font-weight: 500; }
+  .act-cat   { color: var(--muted); font-size: 0.8rem; }
+  .act-cost  { color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+  /* ── Inline add-form ── */
+  .inline-form {
+    background: rgba(255,255,255,0.02);
+    border-top: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+  }
+  .inline-form .form-row {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .inline-form .fg { flex: 1; min-width: 120px; }
+  .inline-form label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; display: block; }
+  .form-control {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 0.55rem 0.8rem;
+    font-size: 0.88rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-control:focus { border-color: var(--accent); }
+
+  /* ── Packing list ── */
+  .pack-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .pack-item:last-of-type { border-bottom: none; }
+  .pack-item label { margin: 0; font-size: 0.9rem; cursor: pointer; }
+  .pack-item input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+  .packed-label { text-decoration: line-through; color: var(--muted); }
+
+  /* ── Progress bar ── */
+  .progress-wrap { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .progress-bar-bg { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { background: var(--accent); height: 100%; border-radius: 99px; transition: width 0.4s; }
+  .progress-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.4rem; }
+
+  /* ── Notes ── */
+  .note-card {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .note-card:last-of-type { border-bottom: none; }
+  .note-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .note-content { font-size: 0.88rem; color: var(--muted); white-space: pre-wrap; }
+  .note-date { font-size: 0.75rem; color: var(--muted); margin-top: 0.4rem; }
+
+  /* ── Expense rows ── */
+  .exp-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.7rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .exp-row:last-of-type { border-bottom: none; }
+  .exp-cat { text-transform: capitalize; }
+  .exp-amt { color: var(--accent); font-weight: 600; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-block;
+    padding: 0.55rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #0f1117; }
+  .btn-danger  { background: rgba(255,59,48,0.15); color: #ff3b30; border: 1px solid rgba(255,59,48,0.3); }
+  .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-sm      { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+
+  /* ── Empty state ── */
+  .empty { padding: 1.5rem; text-align: center; color: var(--muted); font-size: 0.9rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Trip Header ── -->
+<div class="trip-header">
+  <div>
+    <h1>🗺️ {{ trip.title }}</h1>
+    <p class="trip-meta">
+      📅 {{ trip.start_date }} → {{ trip.end_date }}
+      {% if trip.description %} &nbsp;·&nbsp; {{ trip.description }}{% endif %}
+    </p>
+  </div>
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+    <a href="{% url 'trip_list' %}" class="btn btn-ghost btn-sm">← All Trips</a>
+    <a href="{% url 'shared_trip' trip.pk %}" class="btn btn-ghost btn-sm" target="_blank">🔗 Share</a>
+    <form method="post" action="{% url 'delete_trip' trip.pk %}" onsubmit="return confirm('Delete this trip?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger btn-sm">Delete Trip</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── Budget Summary ── -->
+<div class="budget-strip">
+  <div class="bstat">
+    <div class="bstat-label">💸 Direct Expenses</div>
+    <div class="bstat-value">₹{{ total_expenses }}</div>
+  </div>
+  <div class="bstat">
+    <div class="bstat-label">🎯 Activity Costs</div>
+    <div class="bstat-value">₹{{ total_activity_cost }}</div>
+  </div>
+  <div class="bstat">
+    <div class="bstat-label">🏷️ Grand Total</div>
+    <div class="bstat-value">₹{{ grand_total }}</div>
+  </div>
+  <div class="bstat">
+    <div class="bstat-label">🎒 Packing</div>
+    <div class="bstat-value">{{ packed_count }}/{{ total_items }}</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     STOPS & ACTIVITIES
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">📍 Stops &amp; Activities</div>
+  </div>
+
+  {% for stop in stops %}
+  <div class="stop-card">
+    <div class="stop-head">
+      <div class="stop-title">🏙️ {{ stop.city }} <span style="color:var(--muted);font-weight:400;font-size:0.82rem;">#{{ stop.order }}</span></div>
+      <div class="stop-dates">{{ stop.arrival_date }} → {{ stop.departure_date }}</div>
+    </div>
+
+    <!-- Activities for this stop -->
+    {% for activity in stop.activities.all %}
+    <div class="activity-row">
+      <div>
+        <div class="act-name">{{ activity.name }}</div>
+        <div class="act-cat">{{ activity.get_category_display }}</div>
+      </div>
+      {% if activity.description %}<div style="color:var(--muted);font-size:0.82rem;flex:1;padding:0 1rem;">{{ activity.description }}</div>{% endif %}
+      <div class="act-cost">₹{{ activity.cost }}</div>
+    </div>
+    {% empty %}
+    <div class="empty">No activities yet for {{ stop.city }}</div>
+    {% endfor %}
+
+    <!-- Add activity inline form -->
+    <div class="inline-form">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_activity">
+        <input type="hidden" name="stop_id" value="{{ stop.pk }}">
+        <div class="form-row">
+          <div class="fg">
+            <label>Activity Name</label>
+            {{ activity_form.name }}
+          </div>
+          <div class="fg" style="max-width:150px;">
+            <label>Category</label>
+            {{ activity_form.category }}
+          </div>
+          <div class="fg" style="max-width:120px;">
+            <label>Cost (₹)</label>
+            {{ activity_form.cost }}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:2px;">+ Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% empty %}
+  <div class="card"><div class="empty">No stops yet — add your first city below!</div></div>
+  {% endfor %}
+
+  <!-- Add Stop form -->
+  <div class="card" style="margin-top:1rem;">
+    <div class="card-body">
+      <div style="font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.9rem;">+ Add a Stop</div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_stop">
+        <div class="form-row" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+          <div class="fg"><label>City</label>{{ stop_form.city }}</div>
+          <div class="fg"><label>Arrival</label>{{ stop_form.arrival_date }}</div>
+          <div class="fg"><label>Departure</label>{{ stop_form.departure_date }}</div>
+          <div class="fg" style="max-width:80px;"><label>Order</label>{{ stop_form.order }}</div>
+          <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:2px;">Add Stop</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     EXPENSES
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">💸 Expenses</div>
+    <div style="color:var(--muted);font-size:0.88rem;">Total: <strong style="color:var(--accent);">₹{{ total_expenses }}</strong></div>
+  </div>
+
+  <div class="card">
+    {% for expense in expenses %}
+    <div class="exp-row">
+      <span class="exp-cat">{{ expense.get_category_display }}</span>
+      <span class="exp-amt">₹{{ expense.amount }}</span>
+    </div>
+    {% empty %}
+    <div class="empty">No expenses logged yet.</div>
+    {% endfor %}
+
+    <div class="inline-form">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_expense">
+        <div class="form-row">
+          <div class="fg"><label>Category</label>{{ exp_form.category }}</div>
+          <div class="fg"><label>Amount (₹)</label>{{ exp_form.amount }}</div>
+          <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:2px;">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PACKING LIST
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">🎒 Packing List</div>
+    <div style="color:var(--muted);font-size:0.88rem;">{{ packed_count }}/{{ total_items }} packed</div>
+  </div>
+
+  <div class="card">
+    {% if total_items > 0 %}
+    <div class="progress-wrap">
+      <div class="progress-label">{{ packed_count }} of {{ total_items }} items packed</div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width: {% if total_items %}{% widthratio packed_count total_items 100 %}{% else %}0{% endif %}%"></div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% for item in packing_items %}
+    <form method="post" class="pack-item">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="toggle_packed">
+      <input type="hidden" name="item_id" value="{{ item.pk }}">
+      <input type="checkbox" {% if item.packed %}checked{% endif %} onchange="this.form.submit()">
+      <label class="{% if item.packed %}packed-label{% endif %}">{{ item.item_name }}</label>
+    </form>
+    {% empty %}
+    <div class="empty">Your packing list is empty.</div>
+    {% endfor %}
+
+    <div class="inline-form">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_packing_item">
+        <div class="form-row">
+          <div class="fg">{{ pack_form.item_name }}</div>
+          <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:2px;">Add Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     NOTES
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">📝 Notes</div>
+  </div>
+
+  <div class="card">
+    {% for note in notes %}
+    <div class="note-card">
+      <div class="note-title">{{ note.title }}</div>
+      <div class="note-content">{{ note.content }}</div>
+      <div class="note-date">{{ note.created_at|date:"M d, Y · H:i" }}</div>
+    </div>
+    {% empty %}
+    <div class="empty">No notes yet. Jot down anything useful!</div>
+    {% endfor %}
+
+    <div class="inline-form">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_note">
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          <div><label>Note Title</label>{{ note_form.title }}</div>
+          <div><label>Content</label>{{ note_form.content }}</div>
+          <div><button type="submit" class="btn btn-primary btn-sm">Add Note</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Constrain stop dates to trip's date window
+  const tripStart = "{{ trip.start_date|date:'Y-m-d' }}";
+  const tripEnd   = "{{ trip.end_date|date:'Y-m-d' }}";
+
+  document.querySelectorAll('input[name="arrival_date"]').forEach(function(arr) {
+    arr.setAttribute('min', tripStart);
+    arr.setAttribute('max', tripEnd);
+    arr.addEventListener('change', function() {
+      const dep = this.closest('form').querySelector('input[name="departure_date"]');
+      if (dep) {
+        dep.setAttribute('min', this.value || tripStart);
+        if (dep.value && dep.value < this.value) dep.value = '';
+      }
+    });
+  });
+
+  document.querySelectorAll('input[name="departure_date"]').forEach(function(dep) {
+    dep.setAttribute('min', tripStart);
+    dep.setAttribute('max', tripEnd);
+  });
+</script>
+{% endblock %}

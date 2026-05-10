@@ -1,5 +1,95 @@
 {% extends "trips/base.html" %}
+{% block title %}Budget — Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--text);
+  }
+  .page-header p { color: var(--muted); margin-top: 0.35rem; }
+
+  .grand-total {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .grand-label { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .grand-value { font-size: 2.2rem; font-weight: 700; color: var(--accent); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .card-head {
+    background: rgba(245,166,35,0.07);
+    border-bottom: 1px solid var(--border);
+    padding: 0.9rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-head .title { font-weight: 600; }
+  .card-head .total { color: var(--accent); font-weight: 700; }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.7rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .row:last-child { border-bottom: none; }
+  .row .label { color: var(--muted); }
+  .row .val   { font-weight: 600; }
+
+  .empty { padding: 2rem; text-align: center; color: var(--muted); font-size: 0.9rem; }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Budget Page</h1>
+<div class="page-header">
+  <h1>💰 Budget Overview</h1>
+  <p>All expenses and activity costs across your trips.</p>
+</div>
+
+<div class="grand-total">
+  <div>
+    <div class="grand-label">Total Spent (All Trips)</div>
+    <div class="grand-value">₹{{ grand_total }}</div>
+  </div>
+  <div style="font-size:2rem;">🏷️</div>
+</div>
+
+{% if data %}
+  {% for d in data %}
+  <div class="card">
+    <div class="card-head">
+      <a href="{% url 'trip_detail' d.trip.pk %}" class="title" style="text-decoration:none;color:var(--text);">{{ d.trip.title }}</a>
+      <span class="total">₹{{ d.total }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Direct Expenses</span>
+      <span class="val">₹{{ d.expenses }}</span>
+    </div>
+    <div class="row">
+      <span class="label">Activity Costs</span>
+      <span class="val">₹{{ d.activities }}</span>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty">No trips or expenses yet. <a href="{% url 'create_trip' %}" style="color:var(--accent);">Create your first trip →</a></div>
+{% endif %}
 {% endblock %}

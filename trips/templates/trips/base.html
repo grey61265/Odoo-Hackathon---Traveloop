@@ -100,13 +100,20 @@
 <body>
 
 <nav>
-  <a class="nav-brand" href="{% url 'dashboard' %}">Travel<span>oop</span></a>
+  <a class="nav-brand" href="{% url 'home' %}">Travel<span>oop</span></a>
+  {% if request.session.user %}
   <ul class="nav-links">
     <li><a href="{% url 'dashboard' %}"  {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
     <li><a href="{% url 'trip_list' %}"  {% if request.resolver_match.url_name == 'trip_list'  %}class="active"{% endif %}>Trips</a></li>
     <li><a href="{% url 'budget' %}"     {% if request.resolver_match.url_name == 'budget'      %}class="active"{% endif %}>Budget</a></li>
     <li><a href="{% url 'profile' %}"    {% if request.resolver_match.url_name == 'profile'     %}class="active"{% endif %}>Profile</a></li>
+    <li><a href="{% url 'logout' %}">Sign Out</a></li>
   </ul>
+  {% else %}
+  <ul class="nav-links">
+    <li><a href="{% url 'google_login' %}">Sign In</a></li>
+  </ul>
+  {% endif %}
 </nav>
 
 <main>

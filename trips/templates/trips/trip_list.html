@@ -1,5 +1,117 @@
 {% extends "trips/base.html" %}
+{% block title %}My Trips — Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--text);
+  }
+  .page-header p { color: var(--muted); margin-top: 0.35rem; }
+
+  .row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: rgba(245,166,35,0.06);
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  tbody td { padding: 0.9rem 1.25rem; font-size: 0.9rem; }
+
+  .btn {
+    display: inline-block;
+    padding: 0.55rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #0f1117; }
+  .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-sm      { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+
+  .empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+  }
+  .empty .big { font-size: 2.5rem; margin-bottom: 0.5rem; }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Trips Page</h1>
+<div class="page-header">
+  <h1>✈️ My Trips</h1>
+  <p>All your adventures, planned and past.</p>
+</div>
+
+<div class="row-actions">
+  <span style="color:var(--muted);font-size:0.88rem;">{{ trips.count }} trip{{ trips.count|pluralize }}</span>
+  <a href="{% url 'create_trip' %}" class="btn btn-primary">+ New Trip</a>
+</div>
+
+<div class="card">
+  {% if trips %}
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Stops</th>
+        <th>Created</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for trip in trips %}
+      <tr>
+        <td><strong>{{ trip.title }}</strong>
+          {% if trip.description %}<div style="color:var(--muted);font-size:0.8rem;margin-top:2px;">{{ trip.description|truncatechars:60 }}</div>{% endif %}
+        </td>
+        <td style="color:var(--muted);">{{ trip.start_date }}</td>
+        <td style="color:var(--muted);">{{ trip.end_date }}</td>
+        <td style="color:var(--muted);">{{ trip.stops.count }}</td>
+        <td style="color:var(--muted);">{{ trip.created_at|date:"M d" }}</td>
+        <td><a href="{% url 'trip_detail' trip.pk %}" class="btn btn-ghost btn-sm">View →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="big">🧳</div>
+    <p>No trips yet. Start planning your first adventure!</p>
+    <br>
+    <a href="{% url 'create_trip' %}" class="btn btn-primary">+ Create Trip</a>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

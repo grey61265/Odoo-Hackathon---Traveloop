@@ -3,82 +3,48 @@
 
 {% block extra_css %}
 <style>
-  /* ── Page header ── */
   .page-header { margin-bottom: 2.5rem; }
   .page-header h1 {
     font-family: 'DM Serif Display', serif;
-    font-size: 2rem;
-    color: var(--text);
-    letter-spacing: -0.5px;
+    font-size: 2rem; color: var(--text); letter-spacing: -0.5px;
   }
   .page-header p { color: var(--muted); margin-top: 0.35rem; font-size: 0.95rem; }
 
-  /* ── Stat cards ── */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2.5rem;
+    gap: 1rem; margin-bottom: 2.5rem;
   }
-
   .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.5rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem; position: relative;
+    overflow: hidden; transition: border-color 0.2s;
   }
   .stat-card:hover { border-color: var(--accent); }
   .stat-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
+    content: ''; position: absolute; inset: 0;
     background: linear-gradient(135deg, rgba(245,166,35,0.06) 0%, transparent 60%);
     pointer-events: none;
   }
-
-  .stat-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.75rem;
-    display: block;
-  }
+  .stat-icon { font-size: 1.5rem; margin-bottom: 0.75rem; display: block; }
   .stat-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
   .stat-value { font-size: 2rem; font-weight: 600; color: var(--text); line-height: 1; }
   .stat-sub   { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
 
-  /* ── Section titles ── */
   .section-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.2rem;
-    color: var(--text);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
+    font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--text);
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;
   }
-  .section-title span { font-size: 1.1rem; }
 
-  /* ── Trip table ── */
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    margin-bottom: 2rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; margin-bottom: 2rem;
   }
-
   table { width: 100%; border-collapse: collapse; }
   thead th {
-    background: rgba(245,166,35,0.06);
-    text-align: left;
-    padding: 0.85rem 1.25rem;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
+    background: rgba(245,166,35,0.06); text-align: left;
+    padding: 0.85rem 1.25rem; font-size: 0.78rem; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--muted); border-bottom: 1px solid var(--border);
   }
   tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
   tbody tr:last-child { border-bottom: none; }
@@ -86,69 +52,47 @@
   tbody td { padding: 0.9rem 1.25rem; font-size: 0.9rem; color: var(--text); }
 
   .badge {
-    display: inline-block;
-    padding: 0.2rem 0.65rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: capitalize;
+    display: inline-block; padding: 0.2rem 0.65rem; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 600; text-transform: capitalize;
   }
   .badge-upcoming { background: rgba(245,166,35,0.15); color: var(--accent); }
   .badge-ongoing  { background: rgba(52,199,89,0.15);  color: #34c759; }
-  .badge-done     { background: rgba(122,122,140,0.15); color: var(--muted); }
+  .badge-past     { background: rgba(122,122,140,0.15); color: var(--muted); }
 
-  /* ── CTA ── */
   .btn {
-    display: inline-block;
-    padding: 0.65rem 1.4rem;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none;
+    display: inline-block; padding: 0.65rem 1.4rem; border-radius: 10px;
+    font-size: 0.9rem; font-weight: 600; text-decoration: none;
     transition: opacity 0.2s, transform 0.15s;
   }
   .btn:hover { opacity: 0.85; transform: translateY(-1px); }
   .btn-primary { background: var(--accent); color: #0f1117; }
   .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
-
+  .btn-sm      { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
   .row-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 
-  /* ── Empty state ── */
-  .empty {
-    text-align: center;
-    padding: 3rem;
-    color: var(--muted);
-  }
+  .empty { text-align: center; padding: 3rem; color: var(--muted); }
   .empty p { margin-top: 0.5rem; font-size: 0.9rem; }
 
-  /* ── Quick links ── */
-  .quick-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 1rem;
-  }
+  .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
   .quick-link {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem 1rem;
-    text-align: center;
-    text-decoration: none;
-    color: var(--text);
-    transition: border-color 0.2s, transform 0.2s;
-    display: block;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.25rem 1rem; text-align: center; text-decoration: none; color: var(--text);
+    transition: border-color 0.2s, transform 0.2s; display: block;
   }
   .quick-link:hover { border-color: var(--accent); transform: translateY(-3px); }
-  .quick-link .ql-icon { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; }
+  .quick-link .ql-icon  { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; }
   .quick-link .ql-label { font-size: 0.85rem; font-weight: 500; color: var(--muted); }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- Page header -->
 <div class="page-header">
-  <h1>Welcome back 🌍</h1>
+  {% if user_data %}
+    <h1>Welcome back, {{ user_data.name|default:"Traveller" }} 🌍</h1>
+  {% else %}
+    <h1>Welcome back 🌍</h1>
+  {% endif %}
   <p>Here's a snapshot of your travels and budget.</p>
 </div>
 
@@ -168,15 +112,15 @@
   </div>
   <div class="stat-card">
     <span class="stat-icon">💸</span>
-    <div class="stat-label">Total Budget</div>
+    <div class="stat-label">Total Spent</div>
     <div class="stat-value">₹{{ total_budget|default:"0" }}</div>
-    <div class="stat-sub">allocated</div>
+    <div class="stat-sub">across all trips</div>
   </div>
   <div class="stat-card">
     <span class="stat-icon">🌐</span>
-    <div class="stat-label">Countries</div>
+    <div class="stat-label">Cities</div>
     <div class="stat-value">{{ countries_visited|default:"0" }}</div>
-    <div class="stat-sub">explored</div>
+    <div class="stat-sub">unique stops</div>
   </div>
 </div>
 
@@ -186,30 +130,39 @@
 <div class="card">
   <div class="row-actions" style="padding: 1rem 1.25rem 0;">
     <span style="color:var(--muted);font-size:0.85rem;">Your latest adventures</span>
-    <a href="{% url 'trip_list' %}" class="btn btn-ghost" style="font-size:0.82rem;padding:0.4rem 1rem;">View all</a>
+    <a href="{% url 'trip_list' %}" class="btn btn-ghost btn-sm">View all</a>
   </div>
 
   {% if recent_trips %}
     <table>
       <thead>
         <tr>
-          <th>Destination</th>
+          <th>Title</th>
           <th>Start Date</th>
           <th>End Date</th>
-          <th>Budget</th>
+          <th>Stops</th>
           <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for trip in recent_trips %}
+        {% now "Y-m-d" as today_str %}
         <tr>
-          <td><strong>{{ trip.destination }}</strong></td>
+          <td><strong>{{ trip.title }}</strong></td>
           <td>{{ trip.start_date }}</td>
           <td>{{ trip.end_date }}</td>
-          <td>₹{{ trip.budget }}</td>
+          <td>{{ trip.stops.count }}</td>
           <td>
-            <span class="badge badge-{{ trip.status }}">{{ trip.status }}</span>
+            {% if trip.end_date < today %}
+              <span class="badge badge-past">Past</span>
+            {% elif trip.start_date <= today %}
+              <span class="badge badge-ongoing">Ongoing</span>
+            {% else %}
+              <span class="badge badge-upcoming">Upcoming</span>
+            {% endif %}
           </td>
+          <td><a href="{% url 'trip_detail' trip.pk %}" class="btn btn-ghost btn-sm">View →</a></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -219,7 +172,7 @@
       <div style="font-size:2.5rem;">🧳</div>
       <p>No trips yet — start planning your first adventure!</p>
       <br/>
-      <a href="{% url 'trip_list' %}" class="btn btn-primary">+ Add a Trip</a>
+      <a href="{% url 'create_trip' %}" class="btn btn-primary">+ Plan a Trip</a>
     </div>
   {% endif %}
 </div>
@@ -227,6 +180,10 @@
 <!-- Quick links -->
 <div class="section-title"><span>⚡</span> Quick Links</div>
 <div class="quick-grid">
+  <a href="{% url 'create_trip' %}" class="quick-link">
+    <span class="ql-icon">➕</span>
+    <span class="ql-label">New Trip</span>
+  </a>
   <a href="{% url 'trip_list' %}" class="quick-link">
     <span class="ql-icon">✈️</span>
     <span class="ql-label">My Trips</span>
