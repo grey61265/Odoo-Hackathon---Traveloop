@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Traveloop{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --border:    #2a2d3a;
+      --accent:    #f5a623;
+      --accent2:   #e05c3a;
+      --text:      #e8e4dc;
+      --muted:     #7a7a8c;
+      --nav-h:     64px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      gap: 2rem;
+    }
+
+    .nav-brand {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+      margin-right: auto;
+    }
+
+    .nav-brand span { color: var(--accent2); }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 0.25rem;
+    }
+
+    .nav-links a {
+      display: block;
+      padding: 0.45rem 1rem;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.18s, background 0.18s;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--text);
+      background: rgba(245,166,35,0.1);
+    }
+
+    .nav-links a.active { color: var(--accent); }
+
+    /* ── Main ── */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem;
+    }
+
+    /* ── Messages ── */
+    .messages { list-style: none; margin-bottom: 1.5rem; }
+    .messages li {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .messages .success { background: rgba(52,199,89,0.15); color: #34c759; border: 1px solid rgba(52,199,89,0.25); }
+    .messages .error   { background: rgba(255,59,48,0.15);  color: #ff3b30; border: 1px solid rgba(255,59,48,0.25); }
+    .messages .info    { background: rgba(245,166,35,0.12); color: var(--accent); border: 1px solid rgba(245,166,35,0.2); }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="{% url 'dashboard' %}">Travel<span>oop</span></a>
+  <ul class="nav-links">
+    <li><a href="{% url 'dashboard' %}"  {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+    <li><a href="{% url 'trip_list' %}"  {% if request.resolver_match.url_name == 'trip_list'  %}class="active"{% endif %}>Trips</a></li>
+    <li><a href="{% url 'budget' %}"     {% if request.resolver_match.url_name == 'budget'      %}class="active"{% endif %}>Budget</a></li>
+    <li><a href="{% url 'profile' %}"    {% if request.resolver_match.url_name == 'profile'     %}class="active"{% endif %}>Profile</a></li>
+  </ul>
+</nav>
+
+<main>
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</main>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
